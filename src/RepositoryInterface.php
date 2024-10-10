@@ -41,6 +41,8 @@ interface RepositoryInterface
 
     public function orderBy($column, $direction = 'asc');
 
+    public function has($relation);
+
     public function with($relations);
 
     public function whereHas($relation, $closure);
@@ -57,23 +59,4 @@ interface RepositoryInterface
 
     public function updateOrInsert(array $attributes, array $values = []);
 
-    /**
-     * Trigger static method calls to the model
-     *
-     * @param $method
-     * @param $arguments
-     *
-     * @return mixed
-     */
-    public static function __callStatic($method, $arguments);
-
-    /**
-     * Trigger method calls to the model
-     *
-     * @param string $method
-     * @param array  $arguments
-     *
-     * @return mixed
-     */
-    public function __call($method, $arguments);
 }

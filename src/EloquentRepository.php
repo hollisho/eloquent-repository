@@ -2,9 +2,17 @@
 
 namespace hollisho\repository;
 
+use hollisho\repository\Events\RepositoryEntityCreated;
+use hollisho\repository\Events\RepositoryEntityCreating;
+use hollisho\repository\Events\RepositoryEntityDeleted;
+use hollisho\repository\Events\RepositoryEntityDeleting;
+use hollisho\repository\Events\RepositoryEntityUpdated;
+use hollisho\repository\Events\RepositoryEntityUpdating;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * @author Hollis
@@ -114,7 +122,9 @@ abstract class EloquentRepository implements RepositoryInterface
      */
     public function lists($column, $key = null)
     {
-        return $this->model->lists($column, $key);
+        $result = $this->model->lists($column, $key);
+        $this->resetRepository();
+        return $result;
     }
 
     public function all($columns = ['*'])
@@ -124,6 +134,7 @@ abstract class EloquentRepository implements RepositoryInterface
         } else {
             $results = $this->model->all($columns);
         }
+        $this->resetRepository();
         return $results;
     }
 
@@ -133,7 +144,9 @@ abstract class EloquentRepository implements RepositoryInterface
             $this->applyConditions($where);
         }
 
-        return $this->model->count();
+        $result = $this->model->count();
+        $this->resetRepository();
+        return $result;
     }
 
     public function paginate($limit = null, $columns = ['*'], $method = "paginate")
@@ -141,84 +154,187 @@ abstract class EloquentRepository implements RepositoryInterface
         $limit = is_null($limit) ?: 15;
         $results = $this->model->{$method}($limit, $columns);
         $results->appends($this->getContainer()->make('request')->query());
+        $this->resetRepository();
         return $results;
+    }
+
+    public function simplePaginate($limit = null, $columns = ['*'])
+    {
+        return $this->paginate($limit, $columns, "simplePaginate");
     }
 
     public function find($id, $columns = ['*'])
     {
-        return $this->model->findOrFail($id, $columns);
+        $result = $this->model->findOrFail($id, $columns);
+        $this->resetRepository();
+        return $result;
     }
 
     public function findByField($field, $value, $columns = ['*'])
     {
-        return $this->model->where($field, '=', $value)->get($columns);
+        $result = $this->model->where($field, '=', $value)->get($columns);
+        $this->resetRepository();
+        return $result;
     }
 
     public function findWhere(array $where, $columns = ['*'])
     {
         $this->applyConditions($where);
-
-        return $this->model->get($columns);
+        $result = $this->model->get($columns);
+        $this->resetRepository();
+        return $result;
     }
 
     public function findWhereIn($field, array $values, $columns = ['*'])
     {
-        // TODO: Implement findWhereIn() method.
+        $result = $this->model->whereIn($field, $values)->get($columns);
+        $this->resetRepository();
+        return $result;
     }
 
     public function findWhereNotIn($field, array $values, $columns = ['*'])
     {
-        // TODO: Implement findWhereNotIn() method.
+        $result = $this->model->whereNotIn($field, $values)->get($columns);
+        $this->resetRepository();
+        return $result;
     }
 
     public function findWhereBetween($field, array $values, $columns = ['*'])
     {
-        // TODO: Implement findWhereBetween() method.
+        $result = $this->model->whereBetween($field, $values)->get($columns);
+        $this->resetRepository();
+        return $result;
     }
 
+    /**
+     * @param array $attributes
+     * @return Model
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @author TeamOne technical department
+     */
     public function create(array $attributes)
     {
-        // TODO: Implement create() method.
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
+        $model = $this->model->newInstance($attributes);
+        $model->save();
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
+        return $model;
     }
 
+    /**
+     * @param array $attributes
+     * @param $id
+     * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @author TeamOne technical department
+     */
     public function update(array $attributes, $id)
     {
-        // TODO: Implement update() method.
+        $model = $this->model->findOrFail($id);
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdating($this, $model));
+        $model->fill($attributes);
+        $model->save();
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdated($this, $model));
+        return $model;
     }
 
+    /**
+     * @param array $attributes
+     * @param array $values
+     * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @author TeamOne technical department
+     */
     public function updateOrCreate(array $attributes, array $values = [])
     {
-        // TODO: Implement updateOrCreate() method.
+
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
+        $model = $this->model->updateOrCreate($attributes, $values);
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdated($this, $model));
+
+        return $model;
     }
 
+    /**
+     * @param $id
+     * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @author TeamOne technical department
+     */
     public function delete($id)
     {
-        // TODO: Implement delete() method.
+        $model = $this->find($id);
+        $originalModel = clone $model;
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleting($this, $model));
+        $deleted = $model->delete();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleted($this, $originalModel));
+
+        return $deleted;
     }
 
+    /**
+     * @param array $where
+     * @return bool|null
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @author TeamOne technical department
+     */
     public function deleteWhere(array $where)
     {
-        // TODO: Implement deleteWhere() method.
+        $this->applyConditions($where);
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleting($this, $this->model->getModel()));
+        $deleted = $this->model->delete();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleted($this, $this->model->getModel()));
+        $this->resetRepository();
+
+        return $deleted;
     }
 
     public function orderBy($column, $direction = 'asc')
     {
-        // TODO: Implement orderBy() method.
+        $this->model = $this->model->orderBy($column, $direction);
+
+        return $this;
+    }
+
+    /**
+     * @param $relation
+     * @return $this
+     * @author TeamOne technical department
+     */
+    public function has($relation)
+    {
+        $this->model = $this->model->has($relation);
+
+        return $this;
     }
 
     public function with($relations)
     {
-        // TODO: Implement with() method.
+        $this->model = $this->model->with($relations);
+
+        return $this;
     }
 
     public function whereHas($relation, $closure)
     {
-        // TODO: Implement whereHas() method.
+        $this->model = $this->model->whereHas($relation, $closure);
+
+        return $this;
     }
 
     public function withCount($relations)
     {
-        // TODO: Implement withCount() method.
+        $this->model = $this->model->withCount($relations);
+        return $this;
     }
 
     public function firstOrNew(array $attributes = [])
@@ -231,9 +347,16 @@ abstract class EloquentRepository implements RepositoryInterface
         // TODO: Implement firstOrCreate() method.
     }
 
+    /**
+     * @param $limit
+     * @return mixed
+     * @author TeamOne technical department
+     */
     public function limit($limit)
     {
-        // TODO: Implement limit() method.
+        $results = $this->model->limit($limit);
+        $this->resetRepository();
+        return $results;
     }
 
     public function insert($values)
@@ -248,12 +371,12 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public static function __callStatic($method, $arguments)
     {
-        // TODO: Implement __callStatic() method.
+        return call_user_func_array([new static(), $method], $arguments);
     }
 
     public function __call($method, $arguments)
     {
-        // TODO: Implement __call() method.
+        return call_user_func_array([$this->model, $method], $arguments);
     }
 
     /**
@@ -271,6 +394,14 @@ abstract class EloquentRepository implements RepositoryInterface
             } else {
                 $this->model = $this->model->where($field, '=', $value);
             }
+        }
+    }
+
+    protected function resetRepository()
+    {
+        $this->resetModel();
+        if (method_exists($this, 'resetCriteria')) {
+            $this->resetCriteria();
         }
     }
 
