@@ -49,9 +49,9 @@ interface RepositoryInterface
 
     public function withCount($relations);
 
-    public function firstOrNew(array $attributes = []);
+    public function firstOrNew(array $attributes, array $values = []);
 
-    public function firstOrCreate(array $attributes = []);
+    public function firstOrCreate(array $attributes, array $values = []);
 
     public function limit($limit);
 

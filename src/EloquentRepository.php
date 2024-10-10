@@ -212,7 +212,7 @@ abstract class EloquentRepository implements RepositoryInterface
     public function create(array $attributes)
     {
         $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
-        $model = $this->model->newInstance($attributes);
+        $model = $this->model->create($attributes);
         $model->save();
         $this->resetRepository();
         $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
@@ -335,12 +335,22 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public function firstOrNew(array $attributes = [])
     {
-        // TODO: Implement firstOrNew() method.
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
+        $model = $this->model->firstOrNew($attributes);
+        $model->save();
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
+        return $model;
     }
 
     public function firstOrCreate(array $attributes = [])
     {
-        // TODO: Implement firstOrCreate() method.
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
+        $model = $this->model->firstOrCreate($attributes);
+        $model->save();
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
+        return $model;
     }
 
     /**
@@ -357,12 +367,22 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public function insert($values)
     {
-        // TODO: Implement insert() method.
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
+        $model = $this->model->insert($attributes);
+        $model->save();
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
+        return $model;
     }
 
     public function updateOrInsert(array $attributes, array $values = [])
     {
-        // TODO: Implement updateOrInsert() method.
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
+        $model = $this->model->updateOrInsert($attributes, $values);
+        $this->resetRepository();
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdated($this, $model));
+
+        return $model;
     }
 
     public static function __callStatic($method, $arguments)
