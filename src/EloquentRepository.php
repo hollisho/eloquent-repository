@@ -42,11 +42,6 @@ abstract class EloquentRepository implements RepositoryInterface
      */
     protected $model;
 
-    public function __construct()
-    {
-        $this->makeModel();
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -111,7 +106,8 @@ abstract class EloquentRepository implements RepositoryInterface
             throw new RepositoryException("Class {$this->model()} must be an instance of Illuminate\\Database\\Eloquent\\Model");
         }
 
-        return $this->model = $model;
+        $this->model = $model;
+        return $this;
     }
 
     /**
@@ -211,7 +207,7 @@ abstract class EloquentRepository implements RepositoryInterface
      * @return Model
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function create(array $attributes)
     {
@@ -229,7 +225,7 @@ abstract class EloquentRepository implements RepositoryInterface
      * @return mixed
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function update(array $attributes, $id)
     {
@@ -248,7 +244,7 @@ abstract class EloquentRepository implements RepositoryInterface
      * @return mixed
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function updateOrCreate(array $attributes, array $values = [])
     {
@@ -266,7 +262,7 @@ abstract class EloquentRepository implements RepositoryInterface
      * @return mixed
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function delete($id)
     {
@@ -285,7 +281,7 @@ abstract class EloquentRepository implements RepositoryInterface
      * @return bool|null
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function deleteWhere(array $where)
     {
@@ -308,7 +304,7 @@ abstract class EloquentRepository implements RepositoryInterface
     /**
      * @param $relation
      * @return $this
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function has($relation)
     {
@@ -350,7 +346,7 @@ abstract class EloquentRepository implements RepositoryInterface
     /**
      * @param $limit
      * @return mixed
-     * @author TeamOne technical department
+     * @author Hollis Ho
      */
     public function limit($limit)
     {
@@ -397,6 +393,11 @@ abstract class EloquentRepository implements RepositoryInterface
         }
     }
 
+    /**
+     * @return void
+     * @throws RepositoryException
+     * @author Hollis Ho
+     */
     protected function resetRepository()
     {
         $this->resetModel();
