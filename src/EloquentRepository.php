@@ -95,7 +95,7 @@ abstract class EloquentRepository implements RepositoryInterface
     abstract public function model();
 
     /**
-     * @return Model
+     * @return EloquentRepository
      * @throws RepositoryException
      */
     public function makeModel()
@@ -206,7 +206,7 @@ abstract class EloquentRepository implements RepositoryInterface
      * @param array $attributes
      * @return Model
      * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
+     * @throws NotFoundExceptionInterface|RepositoryException
      * @author Hollis Ho
      */
     public function create(array $attributes)
@@ -333,7 +333,7 @@ abstract class EloquentRepository implements RepositoryInterface
         return $this;
     }
 
-    public function firstOrNew(array $attributes = [])
+    public function firstOrNew(array $attributes = [], array $values = [])
     {
         $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->firstOrNew($attributes);
@@ -343,7 +343,7 @@ abstract class EloquentRepository implements RepositoryInterface
         return $model;
     }
 
-    public function firstOrCreate(array $attributes = [])
+    public function firstOrCreate(array $attributes = [], array $values = [])
     {
         $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->firstOrCreate($attributes);
@@ -367,8 +367,8 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public function insert($values)
     {
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
-        $model = $this->model->insert($attributes);
+        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $values));
+        $model = $this->model->insert($values);
         $model->save();
         $this->resetRepository();
         $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
