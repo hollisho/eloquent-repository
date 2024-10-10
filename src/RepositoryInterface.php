@@ -9,8 +9,6 @@ namespace hollisho\repository;
  */
 interface RepositoryInterface
 {
-    public function lists($column, $key = null);
-
     public function all($columns = ['*']);
 
     public function count(array $where = [], $columns = '*');

@@ -110,19 +110,6 @@ abstract class EloquentRepository implements RepositoryInterface
         return $this;
     }
 
-    /**
-     * @param $column
-     * @param $key
-     * @return mixed
-     * @author Hollis
-     */
-    public function lists($column, $key = null)
-    {
-        $result = $this->model->lists($column, $key);
-        $this->resetRepository();
-        return $result;
-    }
-
     public function all($columns = ['*'])
     {
         if ($this->model instanceof Builder) {
