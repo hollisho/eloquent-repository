@@ -2,12 +2,6 @@
 
 namespace hollisho\repository;
 
-use hollisho\repository\Events\RepositoryEntityCreated;
-use hollisho\repository\Events\RepositoryEntityCreating;
-use hollisho\repository\Events\RepositoryEntityDeleted;
-use hollisho\repository\Events\RepositoryEntityDeleting;
-use hollisho\repository\Events\RepositoryEntityUpdated;
-use hollisho\repository\Events\RepositoryEntityUpdating;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -198,11 +192,9 @@ abstract class EloquentRepository implements RepositoryInterface
      */
     public function create(array $attributes)
     {
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->create($attributes);
         $model->save();
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
         return $model;
     }
 
@@ -217,11 +209,9 @@ abstract class EloquentRepository implements RepositoryInterface
     public function update(array $attributes, $id)
     {
         $model = $this->model->findOrFail($id);
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdating($this, $model));
         $model->fill($attributes);
         $model->save();
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdated($this, $model));
         return $model;
     }
 
@@ -236,10 +226,8 @@ abstract class EloquentRepository implements RepositoryInterface
     public function updateOrCreate(array $attributes, array $values = [])
     {
 
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->updateOrCreate($attributes, $values);
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdated($this, $model));
 
         return $model;
     }
@@ -256,9 +244,7 @@ abstract class EloquentRepository implements RepositoryInterface
         $model = $this->find($id);
         $originalModel = clone $model;
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleting($this, $model));
         $deleted = $model->delete();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleted($this, $originalModel));
 
         return $deleted;
     }
@@ -273,9 +259,7 @@ abstract class EloquentRepository implements RepositoryInterface
     public function deleteWhere(array $where)
     {
         $this->applyConditions($where);
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleting($this, $this->model->getModel()));
         $deleted = $this->model->delete();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityDeleted($this, $this->model->getModel()));
         $this->resetRepository();
 
         return $deleted;
@@ -322,21 +306,17 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public function firstOrNew(array $attributes = [], array $values = [])
     {
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->firstOrNew($attributes);
         $model->save();
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
         return $model;
     }
 
     public function firstOrCreate(array $attributes = [], array $values = [])
     {
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->firstOrCreate($attributes);
         $model->save();
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
         return $model;
     }
 
@@ -354,20 +334,16 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public function insert($values)
     {
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $values));
         $model = $this->model->insert($values);
         $model->save();
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreated($this, $model));
         return $model;
     }
 
     public function updateOrInsert(array $attributes, array $values = [])
     {
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityCreating($this, $attributes));
         $model = $this->model->updateOrInsert($attributes, $values);
         $this->resetRepository();
-        $this->getContainer()->get('events')->dispatch(new RepositoryEntityUpdated($this, $model));
 
         return $model;
     }
