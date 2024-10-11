@@ -104,6 +104,15 @@ abstract class EloquentRepository implements RepositoryInterface
         return $this;
     }
 
+
+    /**
+     * @return Builder
+     */
+    public function getQuery()
+    {
+        return $this->model::query();
+    }
+
     public function all($columns = ['*'])
     {
         if ($this->model instanceof Builder) {
