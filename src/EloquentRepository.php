@@ -202,7 +202,6 @@ abstract class EloquentRepository implements RepositoryInterface
     public function create(array $attributes)
     {
         $model = $this->model->create($attributes);
-        $model->save();
         $this->resetRepository();
         return $model;
     }
@@ -316,7 +315,6 @@ abstract class EloquentRepository implements RepositoryInterface
     public function firstOrNew(array $attributes = [], array $values = [])
     {
         $model = $this->model->firstOrNew($attributes);
-        $model->save();
         $this->resetRepository();
         return $model;
     }
@@ -324,7 +322,6 @@ abstract class EloquentRepository implements RepositoryInterface
     public function firstOrCreate(array $attributes = [], array $values = [])
     {
         $model = $this->model->firstOrCreate($attributes);
-        $model->save();
         $this->resetRepository();
         return $model;
     }
@@ -344,7 +341,6 @@ abstract class EloquentRepository implements RepositoryInterface
     public function insert($values)
     {
         $model = $this->model->insert($values);
-        $model->save();
         $this->resetRepository();
         return $model;
     }
