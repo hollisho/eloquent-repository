@@ -1,18 +1,19 @@
 <?php
 namespace hollisho\repository\Cache;
 
-use Illuminate\Redis\RedisManager;
+use Predis\Client;
 
 class CacheFactory
 {
     /**
      * 创建Redis缓存
-     * @param RedisManager $redis
-     * @param string $prefix
+     * @param array $config Redis配置
+     * @param string $prefix 缓存键前缀
      * @return RedisCache
      */
-    public static function createRedisCache(RedisManager $redis, string $prefix = 'repository:'): RedisCache
+    public static function createRedisCache(array $config = [], string $prefix = 'repository:'): RedisCache
     {
+        $redis = new Client($config);
         return new RedisCache($redis, $prefix);
     }
 

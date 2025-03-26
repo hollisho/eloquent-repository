@@ -1,12 +1,12 @@
 <?php
 namespace hollisho\repository\Cache;
 
-use Illuminate\Redis\RedisManager;
+use Predis\Client;
 
 class RedisCache implements CacheInterface
 {
     /**
-     * @var RedisManager
+     * @var Client
      */
     protected $redis;
 
@@ -17,10 +17,10 @@ class RedisCache implements CacheInterface
 
     /**
      * RedisCache constructor.
-     * @param RedisManager $redis
+     * @param Client $redis
      * @param string $prefix
      */
-    public function __construct(RedisManager $redis, string $prefix = 'repository:')
+    public function __construct(Client $redis, string $prefix = 'repository:')
     {
         $this->redis = $redis;
         $this->prefix = $prefix;
@@ -42,7 +42,7 @@ class RedisCache implements CacheInterface
     public function get(string $key, $default = null)
     {
         $value = $this->redis->get($this->getCacheKey($key));
-        return $value !== false ? unserialize($value) : $default;
+        return $value !== null ? unserialize($value) : $default;
     }
 
     /**
@@ -65,7 +65,7 @@ class RedisCache implements CacheInterface
      */
     public function delete(string $key): bool
     {
-        return $this->redis->del($this->getCacheKey($key)) > 0;
+        return (bool)$this->redis->del($this->getCacheKey($key));
     }
 
     /**
@@ -77,7 +77,7 @@ class RedisCache implements CacheInterface
         if (empty($keys)) {
             return true;
         }
-        return $this->redis->del($keys) > 0;
+        return (bool)$this->redis->del($keys);
     }
 
     /**
@@ -85,6 +85,6 @@ class RedisCache implements CacheInterface
      */
     public function has(string $key): bool
     {
-        return $this->redis->exists($this->getCacheKey($key)) > 0;
+        return (bool)$this->redis->exists($this->getCacheKey($key));
     }
 } 
