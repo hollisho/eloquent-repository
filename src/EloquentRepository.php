@@ -2,6 +2,8 @@
 
 namespace hollisho\repository;
 
+use hollisho\repository\Cache\CacheInterface;
+use hollisho\repository\Query\QueryObject;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +37,16 @@ abstract class EloquentRepository implements RepositoryInterface
      * @var Model
      */
     protected $model;
+
+    /**
+     * @var CacheInterface|null
+     */
+    protected $cache;
+
+    /**
+     * @var int|null
+     */
+    protected $cacheTtl;
 
     /**
      * {@inheritdoc}
@@ -113,15 +125,91 @@ abstract class EloquentRepository implements RepositoryInterface
         return $this->model::query();
     }
 
+    /**
+     * 设置缓存实例
+     * @param CacheInterface $cache
+     * @return $this
+     */
+    public function setCache(CacheInterface $cache)
+    {
+        $this->cache = $cache;
+        return $this;
+    }
+
+    /**
+     * 设置缓存时间
+     * @param int $ttl
+     * @return $this
+     */
+    public function setCacheTtl(int $ttl)
+    {
+        $this->cacheTtl = $ttl;
+        return $this;
+    }
+
+    /**
+     * 生成缓存键
+     * @param string $method
+     * @param array $args
+     * @return string
+     */
+    protected function generateCacheKey(string $method, array $args = []): string
+    {
+        return sprintf(
+            '%s:%s:%s',
+            $this->getRepositoryId(),
+            $method,
+            md5(serialize($args))
+        );
+    }
+
+    /**
+     * 从缓存中获取数据
+     * @param string $method
+     * @param array $args
+     * @param callable $callback
+     * @return mixed
+     */
+    protected function remember(string $method, array $args, callable $callback)
+    {
+        if (!$this->cache) {
+            return $callback();
+        }
+
+        $key = $this->generateCacheKey($method, $args);
+        
+        if ($this->cache->has($key)) {
+            return $this->cache->get($key);
+        }
+
+        $result = $callback();
+        $this->cache->set($key, $result, $this->cacheTtl);
+        
+        return $result;
+    }
+
+    /**
+     * 应用查询对象
+     * @param QueryObject $query
+     * @return $this
+     */
+    public function applyQuery(QueryObject $query)
+    {
+        $this->model = $query->apply($this->model instanceof Builder ? $this->model : $this->model->query());
+        return $this;
+    }
+
     public function all($columns = ['*'])
     {
-        if ($this->model instanceof Builder) {
-            $results = $this->model->get($columns);
-        } else {
-            $results = $this->model->all($columns);
-        }
-        $this->resetRepository();
-        return $results;
+        return $this->remember(__FUNCTION__, func_get_args(), function () use ($columns) {
+            if ($this->model instanceof Builder) {
+                $results = $this->model->get($columns);
+            } else {
+                $results = $this->model->all($columns);
+            }
+            $this->resetRepository();
+            return $results;
+        });
     }
 
     public function count(array $where = [], $columns = '*')
@@ -151,9 +239,11 @@ abstract class EloquentRepository implements RepositoryInterface
 
     public function find($id, $columns = ['*'])
     {
-        $result = $this->model->findOrFail($id, $columns);
-        $this->resetRepository();
-        return $result;
+        return $this->remember(__FUNCTION__, func_get_args(), function () use ($id, $columns) {
+            $result = $this->model->findOrFail($id, $columns);
+            $this->resetRepository();
+            return $result;
+        });
     }
 
     public function findByField($field, $value, $columns = ['*'])

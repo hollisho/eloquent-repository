@@ -21,11 +21,28 @@
     "php": ">=7.2",
     "illuminate/database": "^8.83",
     "illuminate/events": "^8.83",
-    "psr/container": "^1.1"
+    "psr/container": "^1.1",
+    "predis/predis": "^2.0"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^0.9.3 || ^1.9 || ^1.10.28",
+    "phpunit/phpunit": "^6.5 || ^8.5 || ^9.5",
+    "mockery/mockery": "^1.5"
   },
   "autoload": {
     "psr-4": {
       "hollisho\\repository\\": "src"
-    }
+    },
+    "exclude-from-classmap": [
+      "/tests/"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "hollisho\\repository\\tests\\": "tests"
+    },
+    "exclude-from-classmap": [
+      "/tests/"
+    ]
   }
 }
