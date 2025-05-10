@@ -2,7 +2,9 @@
 
 namespace hollisho\repository;
 
-trait UnixTimestampTrait
+use Illuminate\Database\Eloquent\Model;
+
+class UnixTimestampModel extends Model
 {
     protected $dateFormat = 'U';
 
